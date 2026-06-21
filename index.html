@@ -1,0 +1,167 @@
+```react
+import React, { useRef, useState, Suspense } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, Stars, Float, ContactShadows } from '@react-three/drei';
+
+/**
+ * The primary interactive 3D Shape
+ */
+function IcosahedronShape() {
+  const meshRef = useRef();
+  const [hovered, setHover] = useState(false);
+  const [clicked, setClicked] = useState(false);
+
+  // Rotate the shape smoothly on every frame
+  useFrame((state, delta) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.x += delta * 0.15;
+      meshRef.current.rotation.y += delta * 0.25;
+    }
+  });
+
+  return (
+    <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
+      <mesh
+        ref={meshRef}
+        scale={clicked ? 1.3 : 1}
+        onClick={() => setClicked(!clicked)}
+        onPointerOver={() => setHover(true)}
+        onPointerOut={() => setHover(false)}
+      >
+        <icosahedronGeometry args={[2, 0]} />
+        <meshStandardMaterial
+          color={hovered ? '#4ade80' : '#3b82f6'}
+          wireframe={hovered}
+          roughness={0.2}
+          metalness={0.8}
+          emissive={hovered ? '#064e3b' : '#1e3a8a'}
+          emissiveIntensity={0.2}
+        />
+      </mesh>
+    </Float>
+  );
+}
+
+/**
+ * Loading Fallback for the 3D Canvas
+ */
+function Loader() {
+  return (
+    <mesh>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshBasicMaterial color="white" wireframe />
+    </mesh>
+  );
+}
+
+/**
+ * Main Application Component
+ */
+export default function App() {
+  return (
+    <div className="w-full h-screen bg-slate-950 relative overflow-hidden font-sans text-slate-100 selection:bg-blue-500/30">
+      
+      {/* UI Overlay Layer */}
+      <div className="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-6 sm:p-10">
+        
+        {/* Header / Navigation */}
+        <header className="flex justify-between items-center w-full max-w-7xl mx-auto">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 drop-shadow-xl select-none">
+            My 3D World
+          </h1>
+          <nav className="hidden sm:flex space-x-8 text-sm sm:text-base font-semibold tracking-wide">
+            <a href="#" className="hover:text-emerald-400 transition-colors pointer-events-auto">Showcase</a>
+            <a href="#" className="hover:text-emerald-400 transition-colors pointer-events-auto">Labs</a>
+            <a href="#" className="hover:text-emerald-400 transition-colors pointer-events-auto">Contact</a>
+          </nav>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="w-full max-w-7xl mx-auto mb-8 sm:mb-16 pointer-events-auto flex flex-col items-start">
+          <div className="max-w-md backdrop-blur-sm bg-slate-900/30 p-6 rounded-2xl border border-slate-700/50 shadow-2xl">
+            <h2 className="text-2xl font-bold mb-3 text-white">Interactive Space</h2>
+            <p className="text-base sm:text-lg text-slate-300 mb-6 leading-relaxed">
+              Drag anywhere to orbit the camera. Scroll to zoom in and out. Click or tap the geometric shape to interact with it.
+            </p>
+            <div className="flex space-x-4">
+              <button className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-500/40 active:translate-y-0">
+                Explore Now
+              </button>
+              <button className="bg-transparent border-2 border-slate-600 hover:border-slate-400 text-slate-300 hover:text-white px-6 py-3 rounded-full font-semibold transition-all duration-300">
+                View Source
+              </button>
+            </div>
+          </div>
+        </main>
+        
+        {/* Footer info */}
+        <footer className="absolute bottom-6 right-6 text-xs text-slate-500 font-mono select-none">
+          Powered by React Three Fiber
+        </footer>
+      </div>
+
+      {/* 3D Canvas Layer */}
+      <div className="absolute inset-0 z-0 cursor-move">
+        <Canvas 
+          camera={{ position: [0, 0, 8], fov: 45 }}
+          dpr={[1, 2]} // Responsive pixel ratio for high DPI displays
+          gl={{ antialias: true }}
+        >
+          {/* Background color matching the dark theme */}
+          <color attach="background" args={['#020617']} />
+
+          {/* Deep space background stars */}
+          <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+
+          {/* Scene Lighting */}
+          <ambientLight intensity={0.4} />
+          <directionalLight 
+            position={[10, 10, 5]} 
+            intensity={2} 
+            color="#ffffff" 
+          />
+          <pointLight 
+            position={[-10, -10, -5]} 
+            intensity={2} 
+            color="#10b981" // Emerald tint
+          />
+          <spotLight 
+            position={[0, 10, 0]} 
+            angle={0.5} 
+            penumbra={1} 
+            intensity={2} 
+            color="#3b82f6" // Blue tint
+            castShadow 
+          />
+
+          {/* Core 3D Object with loading state */}
+          <Suspense fallback={<Loader />}>
+            <IcosahedronShape />
+          </Suspense>
+
+          {/* Ground shadow for depth */}
+          <ContactShadows 
+            position={[0, -3.5, 0]} 
+            opacity={0.4} 
+            scale={20} 
+            blur={2} 
+            far={4} 
+          />
+
+          {/* Camera Controls */}
+          <OrbitControls 
+            enablePan={false} 
+            enableZoom={true} 
+            minDistance={4}
+            maxDistance={15}
+            autoRotate 
+            autoRotateSpeed={0.8} 
+            makeDefault
+          />
+        </Canvas>
+      </div>
+    </div>
+  );
+}
+
+```
